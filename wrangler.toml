@@ -1,0 +1,26 @@
+name = "bm-pecas-diesel"
+compatibility_date = "2024-12-04"
+compatibility_flags = ["nodejs_compat"]
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "bm-pecas-db"
+database_id = "your-database-id-here"
+
+# R2 Storage binding for product images
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "bm-pecas-images"
+
+# Environment variables
+[vars]
+WHATSAPP_NUMBER = "5519971477055"
+ADMIN_USERNAME = "admin"
+# ADMIN_PASSWORD should be set via wrangler secret put ADMIN_PASSWORD
+
+[build]
+command = "npm run build"
+
+[site]
+bucket = "./dist"
