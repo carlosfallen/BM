@@ -1,0 +1,71 @@
+---
+import { checkAuth } from '../lib/auth';
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+
+// Check authentication
+const session = checkAuth(Astro.request);
+if (!session.isAuthenticated) {
+  return Astro.redirect('/admin/login');
+}
+---
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title} - Admin - BM Peças Diesel</title>
+    <meta name="robots" content="noindex, nofollow" />
+  </head>
+  <body class="bg-gray-100">
+    <!-- Admin Header -->
+    <header class="bg-gray-900 text-white shadow-lg">
+      <div class="container mx-auto px-4">
+        <div class="flex items-center justify-between h-16">
+          <div class="flex items-center space-x-8">
+            <a href="/admin" class="text-xl font-bold">
+              BM Admin
+            </a>
+            <nav class="hidden md:flex space-x-4">
+              <a href="/admin" class="hover:text-primary-400 transition-colors">
+                Dashboard
+              </a>
+              <a href="/admin/produtos" class="hover:text-primary-400 transition-colors">
+                Produtos
+              </a>
+              <a href="/admin/categorias" class="hover:text-primary-400 transition-colors">
+                Categorias
+              </a>
+              <a href="/admin/pedidos" class="hover:text-primary-400 transition-colors">
+                Pedidos
+              </a>
+            </nav>
+          </div>
+          <div class="flex items-center space-x-4">
+            <span class="text-sm text-gray-300">
+              Olá, {session.username}
+            </span>
+            <form action="/admin/logout" method="post">
+              <button
+                type="submit"
+                class="text-sm text-red-400 hover:text-red-300 transition-colors"
+              >
+                Sair
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+      <slot />
+    </main>
+  </body>
+</html>

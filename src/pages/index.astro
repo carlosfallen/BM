@@ -1,0 +1,432 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
+import { Database } from '../lib/db';
+import { formatPrice } from '../lib/utils';
+import type { Product, Category } from '../types';
+
+// Get database from Astro.locals (injected by Cloudflare)
+const db = new Database(Astro.locals.runtime.env.DB);
+
+// Fetch featured products and categories
+const featuredProducts = await db.getFeaturedProducts(8);
+const categories = await db.getCategories();
+const activeCategories = categories.filter(cat => cat.active === 1);
+---
+
+<BaseLayout
+  title="BM Peças Diesel - Peças de Qualidade para Caminhões e Implementos"
+  description="A BM Peças Diesel oferece as melhores peças e componentes para caminhões e implementos rodoviários. Qualidade garantida e entrega rápida."
+>
+  <Header slot="header" client:load />
+
+  <!-- Hero Section -->
+  <section id="hero" class="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
+    <!-- Animated Background -->
+    <div class="absolute inset-0 opacity-20">
+      <div id="bg-pattern" class="absolute inset-0" style="background-image: url('data:image/svg+xml,%3Csvg width=&quot;60&quot; height=&quot;60&quot; viewBox=&quot;0 0 60 60&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cg fill=&quot;none&quot; fill-rule=&quot;evenodd&quot;%3E%3Cg fill=&quot;%23ffffff&quot; fill-opacity=&quot;0.4&quot;%3E%3Cpath d=&quot;M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z&quot;/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+    </div>
+
+    <!-- Floating Particles -->
+    <div id="particles" class="absolute inset-0 pointer-events-none"></div>
+
+    <!-- Hero Content -->
+    <div class="container mx-auto px-4 relative z-10">
+      <div class="max-w-4xl mx-auto text-center">
+        <div id="hero-logo" class="mb-8 opacity-0">
+          <h1 class="text-6xl md:text-8xl font-bold text-white mb-4 font-display">
+            BM <span class="text-primary-400">Peças</span> Diesel
+          </h1>
+          <div class="w-32 h-1 bg-primary-500 mx-auto mb-6"></div>
+        </div>
+
+        <div id="hero-subtitle" class="mb-8 opacity-0">
+          <p class="text-xl md:text-2xl text-gray-300 mb-4">
+            Peças de Qualidade para Caminhões e Implementos Rodoviários
+          </p>
+          <p class="text-lg text-gray-400">
+            Especialistas em sistemas de freios, válvulas, suspensão e transmissão
+          </p>
+        </div>
+
+        <div id="hero-cta" class="flex flex-col sm:flex-row gap-4 justify-center opacity-0">
+          <a href="/produtos" class="btn btn-primary text-lg px-8 py-4 rounded-full shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300">
+            Ver Produtos
+          </a>
+          <a href="https://wa.me/5519971477055" class="btn bg-green-500 hover:bg-green-600 text-white text-lg px-8 py-4 rounded-full shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300">
+            <svg class="inline-block w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
+            Fale Conosco
+          </a>
+        </div>
+      </div>
+
+      <!-- Scroll Indicator -->
+      <div id="scroll-indicator" class="absolute bottom-8 left-1/2 transform -translate-x-1/2 opacity-0">
+        <div class="animate-bounce text-white text-center">
+          <svg class="w-8 h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+          </svg>
+          <p class="text-sm mt-2">Role para explorar</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured Products Section -->
+  <section id="featured-products" class="py-20 bg-white">
+    <div class="container mx-auto px-4">
+      <div class="text-center mb-16 fade-in-section">
+        <h2 class="section-title">Produtos em Destaque</h2>
+        <p class="text-gray-600 max-w-2xl mx-auto">
+          Confira nossa seleção de produtos mais procurados e com melhor custo-benefício
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        {featuredProducts.map((product, index) => (
+          <div
+            class="product-card card group hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2"
+            data-index={index}
+          >
+            <div class="relative overflow-hidden rounded-t-lg bg-gray-100">
+              {product.image_url ? (
+                <img
+                  src={product.image_url}
+                  alt={product.name}
+                  class="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500"
+                  loading="lazy"
+                />
+              ) : (
+                <div class="w-full h-64 flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300">
+                  <svg class="w-24 h-24 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                  </svg>
+                </div>
+              )}
+              {product.featured === 1 && (
+                <div class="absolute top-4 right-4 bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg">
+                  Destaque
+                </div>
+              )}
+            </div>
+            <div class="p-6">
+              <h3 class="font-bold text-lg mb-2 text-gray-800 group-hover:text-primary-600 transition-colors">
+                {product.name}
+              </h3>
+              {product.code && (
+                <p class="text-sm text-gray-500 mb-3">Cód: {product.code}</p>
+              )}
+              {product.description && (
+                <p class="text-gray-600 text-sm mb-4 line-clamp-2">
+                  {product.description}
+                </p>
+              )}
+              {product.price ? (
+                <p class="text-2xl font-bold text-primary-600 mb-4">
+                  {formatPrice(product.price)}
+                </p>
+              ) : (
+                <p class="text-lg font-semibold text-gray-700 mb-4">Consulte</p>
+              )}
+              <div class="flex gap-2">
+                <a
+                  href={`/produtos/${product.slug}`}
+                  class="btn btn-primary flex-1 text-center"
+                >
+                  Ver Detalhes
+                </a>
+                <a
+                  href={`https://wa.me/5519971477055?text=Olá! Tenho interesse no produto: ${encodeURIComponent(product.name)}`}
+                  class="btn bg-green-500 hover:bg-green-600 text-white px-4"
+                  title="Consultar via WhatsApp"
+                >
+                  <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div class="text-center mt-12">
+        <a href="/produtos" class="btn btn-primary text-lg px-8 py-3 inline-block">
+          Ver Todos os Produtos
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Categories Section -->
+  <section id="categories" class="py-20 bg-gray-50">
+    <div class="container mx-auto px-4">
+      <div class="text-center mb-16 fade-in-section">
+        <h2 class="section-title">Nossas Categorias</h2>
+        <p class="text-gray-600 max-w-2xl mx-auto">
+          Ampla variedade de peças e componentes para seu caminhão ou implemento
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {activeCategories.map((category, index) => (
+          <a
+            href={`/produtos?categoria=${category.slug}`}
+            class="category-card card group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-white"
+            data-index={index}
+          >
+            <div class="p-8 text-center">
+              <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-primary-100 flex items-center justify-center group-hover:bg-primary-500 transition-colors duration-300">
+                <svg class="w-10 h-10 text-primary-600 group-hover:text-white transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                </svg>
+              </div>
+              <h3 class="font-bold text-xl mb-2 text-gray-800 group-hover:text-primary-600 transition-colors">
+                {category.name}
+              </h3>
+              {category.description && (
+                <p class="text-gray-600 text-sm">
+                  {category.description}
+                </p>
+              )}
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Why Choose Us Section -->
+  <section id="why-us" class="py-20 bg-gradient-to-br from-primary-600 to-primary-800 text-white relative overflow-hidden">
+    <!-- Background Pattern -->
+    <div class="absolute inset-0 opacity-10">
+      <div style="background-image: url('data:image/svg+xml,%3Csvg width=&quot;100&quot; height=&quot;100&quot; viewBox=&quot;0 0 100 100&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cpath d=&quot;M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z&quot; fill=&quot;%23ffffff&quot; fill-opacity=&quot;1&quot; fill-rule=&quot;evenodd&quot;/%3E%3C/svg%3E');"></div>
+    </div>
+
+    <div class="container mx-auto px-4 relative z-10">
+      <div class="text-center mb-16 fade-in-section">
+        <h2 class="text-4xl md:text-5xl font-bold mb-4 font-display">Por Que Escolher a BM?</h2>
+        <p class="text-xl text-blue-100">
+          Excelência em qualidade, atendimento e confiabilidade
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div class="why-card text-center p-6">
+          <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-white bg-opacity-20 flex items-center justify-center">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold mb-3">Qualidade Garantida</h3>
+          <p class="text-blue-100">
+            Apenas produtos originais e certificados, com garantia de qualidade
+          </p>
+        </div>
+
+        <div class="why-card text-center p-6">
+          <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-white bg-opacity-20 flex items-center justify-center">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold mb-3">Entrega Rápida</h3>
+          <p class="text-blue-100">
+            Logística eficiente para atender suas necessidades com agilidade
+          </p>
+        </div>
+
+        <div class="why-card text-center p-6">
+          <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-white bg-opacity-20 flex items-center justify-center">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold mb-3">Atendimento Especializado</h3>
+          <p class="text-blue-100">
+            Equipe técnica preparada para ajudar você a encontrar a peça certa
+          </p>
+        </div>
+
+        <div class="why-card text-center p-6">
+          <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-white bg-opacity-20 flex items-center justify-center">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold mb-3">Preços Competitivos</h3>
+          <p class="text-blue-100">
+            Melhor custo-benefício do mercado, sem comprometer a qualidade
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section id="cta" class="py-20 bg-gray-900 text-white">
+    <div class="container mx-auto px-4">
+      <div class="max-w-4xl mx-auto text-center">
+        <h2 class="text-4xl md:text-5xl font-bold mb-6 font-display">
+          Pronto para Encontrar a Peça Ideal?
+        </h2>
+        <p class="text-xl text-gray-300 mb-8">
+          Entre em contato agora mesmo e receba atendimento personalizado
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="/produtos" class="btn bg-white text-gray-900 hover:bg-gray-100 text-lg px-8 py-4 rounded-full shadow-lg transform hover:scale-105 transition-all duration-300">
+            Explorar Catálogo
+          </a>
+          <a href="https://wa.me/5519971477055" class="btn bg-green-500 hover:bg-green-600 text-white text-lg px-8 py-4 rounded-full shadow-lg transform hover:scale-105 transition-all duration-300">
+            <svg class="inline-block w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
+            Falar com Especialista
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Animation Scripts -->
+  <script>
+    import gsap from 'gsap';
+    import { ScrollTrigger } from 'gsap/ScrollTrigger';
+    import anime from 'animejs/lib/anime.es.js';
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    // Hero animations
+    gsap.timeline({ defaults: { ease: 'power3.out' } })
+      .to('#hero-logo', { opacity: 1, y: 0, duration: 1, delay: 0.2 })
+      .to('#hero-subtitle', { opacity: 1, y: 0, duration: 1 }, '-=0.5')
+      .to('#hero-cta', { opacity: 1, y: 0, duration: 1 }, '-=0.5')
+      .to('#scroll-indicator', { opacity: 1, duration: 0.8 }, '-=0.3');
+
+    // Create floating particles
+    const particlesContainer = document.getElementById('particles');
+    if (particlesContainer) {
+      for (let i = 0; i < 30; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'absolute w-2 h-2 bg-white rounded-full opacity-30';
+        particle.style.left = `${Math.random() * 100}%`;
+        particle.style.top = `${Math.random() * 100}%`;
+        particlesContainer.appendChild(particle);
+
+        gsap.to(particle, {
+          y: `random(-100, 100)`,
+          x: `random(-100, 100)`,
+          duration: `random(3, 6)`,
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut',
+        });
+      }
+    }
+
+    // Product cards stagger animation
+    anime({
+      targets: '.product-card',
+      translateY: [50, 0],
+      opacity: [0, 1],
+      delay: anime.stagger(100),
+      easing: 'easeOutQuad',
+      duration: 800,
+    });
+
+    // Category cards animation
+    anime({
+      targets: '.category-card',
+      scale: [0.8, 1],
+      opacity: [0, 1],
+      delay: anime.stagger(100, { start: 300 }),
+      easing: 'easeOutElastic(1, .8)',
+      duration: 1000,
+    });
+
+    // Why cards animation
+    anime({
+      targets: '.why-card',
+      translateY: [30, 0],
+      opacity: [0, 1],
+      delay: anime.stagger(150),
+      easing: 'easeOutQuad',
+      duration: 600,
+    });
+
+    // Scroll-triggered animations for sections
+    const fadeInSections = document.querySelectorAll('.fade-in-section');
+    fadeInSections.forEach((section) => {
+      gsap.fromTo(
+        section,
+        { opacity: 0, y: 50 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 1,
+          scrollTrigger: {
+            trigger: section,
+            start: 'top 80%',
+            end: 'top 50%',
+            scrub: 1,
+          },
+        }
+      );
+    });
+
+    // Product card hover animations
+    const productCards = document.querySelectorAll('.product-card');
+    productCards.forEach((card) => {
+      card.addEventListener('mouseenter', () => {
+        anime({
+          targets: card,
+          scale: 1.02,
+          duration: 300,
+          easing: 'easeOutQuad',
+        });
+      });
+
+      card.addEventListener('mouseleave', () => {
+        anime({
+          targets: card,
+          scale: 1,
+          duration: 300,
+          easing: 'easeOutQuad',
+        });
+      });
+    });
+
+    // Parallax effect for hero background
+    gsap.to('#bg-pattern', {
+      yPercent: 50,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: '#hero',
+        start: 'top top',
+        end: 'bottom top',
+        scrub: true,
+      },
+    });
+
+    // CTA section animation
+    gsap.fromTo(
+      '#cta',
+      { opacity: 0 },
+      {
+        opacity: 1,
+        duration: 1,
+        scrollTrigger: {
+          trigger: '#cta',
+          start: 'top 80%',
+          end: 'top 50%',
+          scrub: 1,
+        },
+      }
+    );
+  </script>
+
+  <Footer slot="footer" client:load />
+</BaseLayout>

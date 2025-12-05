@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import Cart from '../components/Cart';
 
 interface Props {
   title?: string;
@@ -56,6 +57,9 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     </main>
 
     <slot name="footer" />
+
+    <!-- Cart Component -->
+    <Cart client:load />
 
     <!-- WhatsApp Float Button -->
     <a

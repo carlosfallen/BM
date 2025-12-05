@@ -1,0 +1,352 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Header from '../../components/Header';
+import Footer from '../../components/Footer';
+import { Database } from '../../lib/db';
+import { formatPrice, parseImages } from '../../lib/utils';
+import type { Product, Category } from '../../types';
+
+// Get database from Astro.locals
+const db = new Database(Astro.locals.runtime.env.DB);
+
+// Get product slug from URL
+const { slug } = Astro.params;
+
+// Fetch product
+const product = await db.getProductBySlug(slug!);
+
+// If product doesn't exist, return 404
+if (!product || product.active === 0) {
+  return Astro.redirect('/404');
+}
+
+// Track product view
+await db.trackView(product.id);
+
+// Get category
+const category = await db.getCategoryBySlug('');
+const categories = await db.getCategories();
+const productCategory = categories.find(c => c.id === product.category_id);
+
+// Parse product images
+const images = parseImages(product.images);
+const allImages = product.image_url
+  ? [product.image_url, ...images]
+  : images.length > 0
+  ? images
+  : [];
+
+// Get related products (same category, excluding current product)
+const relatedProducts = productCategory
+  ? (await db.getProducts(productCategory.id))
+      .filter(p => p.id !== product.id && p.active === 1)
+      .slice(0, 4)
+  : [];
+
+// WhatsApp message
+const whatsappMessage = `Olá! Tenho interesse no produto:\n\n*${product.name}*${product.code ? `\nCódigo: ${product.code}` : ''}${product.price ? `\nPreço: ${formatPrice(product.price)}` : ''}\n\nPoderia me dar mais informações?`;
+const whatsappLink = `https://wa.me/5519971477055?text=${encodeURIComponent(whatsappMessage)}`;
+---
+
+<BaseLayout
+  title={`${product.name} - BM Peças Diesel`}
+  description={product.description || `Compre ${product.name} na BM Peças Diesel. Qualidade garantida e entrega rápida.`}
+>
+  <Header slot="header" client:load />
+
+  <!-- Breadcrumb -->
+  <section class="bg-gray-100 py-4">
+    <div class="container mx-auto px-4">
+      <nav class="flex items-center space-x-2 text-sm text-gray-600">
+        <a href="/" class="hover:text-primary-600">Início</a>
+        <span>/</span>
+        <a href="/produtos" class="hover:text-primary-600">Produtos</a>
+        {productCategory && (
+          <>
+            <span>/</span>
+            <a href={`/produtos?categoria=${productCategory.slug}`} class="hover:text-primary-600">
+              {productCategory.name}
+            </a>
+          </>
+        )}
+        <span>/</span>
+        <span class="text-gray-900 font-semibold">{product.name}</span>
+      </nav>
+    </div>
+  </section>
+
+  <!-- Product Details -->
+  <section class="py-12 bg-white">
+    <div class="container mx-auto px-4">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <!-- Image Gallery -->
+        <div class="space-y-4">
+          {allImages.length > 0 ? (
+            <div>
+              <!-- Main Image -->
+              <div id="main-image-container" class="relative bg-gray-100 rounded-lg overflow-hidden mb-4 group">
+                <img
+                  id="main-image"
+                  src={allImages[0]}
+                  alt={product.name}
+                  class="w-full h-96 object-cover cursor-zoom-in"
+                />
+                {product.featured === 1 && (
+                  <div class="absolute top-4 right-4 bg-yellow-500 text-white px-3 py-2 rounded-full text-sm font-bold shadow-lg">
+                    Produto em Destaque
+                  </div>
+                )}
+                {product.stock_quantity !== null && product.stock_quantity <= 0 && (
+                  <div class="absolute top-4 left-4 bg-red-500 text-white px-3 py-2 rounded-lg font-bold shadow-lg">
+                    Indisponível
+                  </div>
+                )}
+              </div>
+
+              <!-- Thumbnails -->
+              {allImages.length > 1 && (
+                <div class="grid grid-cols-4 gap-3">
+                  {allImages.map((image, index) => (
+                    <button
+                      type="button"
+                      class="thumbnail-btn border-2 border-transparent hover:border-primary-500 rounded-lg overflow-hidden transition-all duration-300 focus:outline-none focus:border-primary-600"
+                      data-image={image}
+                      data-index={index}
+                    >
+                      <img
+                        src={image}
+                        alt={`${product.name} - Imagem ${index + 1}`}
+                        class="w-full h-20 object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <!-- Placeholder -->
+            <div class="bg-gradient-to-br from-gray-200 to-gray-300 rounded-lg h-96 flex items-center justify-center">
+              <svg class="w-32 h-32 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+              </svg>
+            </div>
+          )}
+        </div>
+
+        <!-- Product Info -->
+        <div>
+          <div class="mb-6">
+            {productCategory && (
+              <a
+                href={`/produtos?categoria=${productCategory.slug}`}
+                class="inline-block text-primary-600 hover:text-primary-700 font-medium mb-2"
+              >
+                {productCategory.name}
+              </a>
+            )}
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              {product.name}
+            </h1>
+            {product.code && (
+              <p class="text-gray-600 mb-2">
+                <span class="font-semibold">Código:</span> {product.code}
+              </p>
+            )}
+            {product.stock_quantity !== null && (
+              <p class={`font-medium ${product.stock_quantity > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {product.stock_quantity > 0 ? '✓ Em estoque' : '✗ Indisponível no momento'}
+              </p>
+            )}
+          </div>
+
+          <!-- Price -->
+          <div class="bg-gray-50 rounded-lg p-6 mb-6">
+            {product.price ? (
+              <div>
+                <p class="text-sm text-gray-600 mb-1">Preço</p>
+                <p class="text-4xl font-bold text-primary-600">
+                  {formatPrice(product.price)}
+                </p>
+              </div>
+            ) : (
+              <div>
+                <p class="text-2xl font-semibold text-gray-700">Consulte o preço</p>
+                <p class="text-sm text-gray-600 mt-1">Entre em contato para saber mais</p>
+              </div>
+            )}
+          </div>
+
+          <!-- CTA Buttons -->
+          <div class="space-y-3 mb-8">
+            <a
+              href={whatsappLink}
+              class="btn bg-green-500 hover:bg-green-600 text-white w-full text-lg py-4 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+            >
+              <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+              </svg>
+              Comprar via WhatsApp
+            </a>
+            <a
+              href="tel:+5519971477055"
+              class="btn bg-gray-700 hover:bg-gray-800 text-white w-full text-lg py-4 flex items-center justify-center gap-3"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+              </svg>
+              Ligar Agora
+            </a>
+          </div>
+
+          <!-- Description -->
+          {product.description && (
+            <div class="mb-8">
+              <h2 class="text-2xl font-bold text-gray-900 mb-4">Descrição</h2>
+              <div class="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                {product.description}
+              </div>
+            </div>
+          )}
+
+          <!-- Additional Info -->
+          <div class="border-t border-gray-200 pt-6">
+            <h3 class="font-bold text-lg mb-4">Informações do Produto</h3>
+            <dl class="space-y-3">
+              {product.code && (
+                <div class="flex">
+                  <dt class="font-semibold text-gray-700 w-32">Código:</dt>
+                  <dd class="text-gray-600">{product.code}</dd>
+                </div>
+              )}
+              {productCategory && (
+                <div class="flex">
+                  <dt class="font-semibold text-gray-700 w-32">Categoria:</dt>
+                  <dd class="text-gray-600">{productCategory.name}</dd>
+                </div>
+              )}
+              {product.stock_quantity !== null && (
+                <div class="flex">
+                  <dt class="font-semibold text-gray-700 w-32">Disponibilidade:</dt>
+                  <dd class={product.stock_quantity > 0 ? 'text-green-600' : 'text-red-600'}>
+                    {product.stock_quantity > 0 ? 'Em estoque' : 'Indisponível'}
+                  </dd>
+                </div>
+              )}
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Related Products -->
+  {relatedProducts.length > 0 && (
+    <section class="py-16 bg-gray-50">
+      <div class="container mx-auto px-4">
+        <h2 class="text-3xl font-bold text-gray-900 mb-8">Produtos Relacionados</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {relatedProducts.map((relatedProduct) => (
+            <div class="card group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+              <div class="relative overflow-hidden rounded-t-lg bg-gray-100">
+                {relatedProduct.image_url ? (
+                  <img
+                    src={relatedProduct.image_url}
+                    alt={relatedProduct.name}
+                    class="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div class="w-full h-48 flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300">
+                    <svg class="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                    </svg>
+                  </div>
+                )}
+              </div>
+              <div class="p-4">
+                <h3 class="font-bold text-lg mb-2 text-gray-800 group-hover:text-primary-600 transition-colors line-clamp-2">
+                  {relatedProduct.name}
+                </h3>
+                {relatedProduct.price ? (
+                  <p class="text-xl font-bold text-primary-600 mb-3">
+                    {formatPrice(relatedProduct.price)}
+                  </p>
+                ) : (
+                  <p class="text-lg font-semibold text-gray-700 mb-3">Consulte</p>
+                )}
+                <a
+                  href={`/produtos/${relatedProduct.slug}`}
+                  class="btn btn-primary w-full text-center text-sm"
+                >
+                  Ver Detalhes
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- Image Gallery Script -->
+  <script>
+    import anime from 'animejs/lib/anime.es.js';
+
+    // Image gallery functionality
+    const mainImage = document.getElementById('main-image') as HTMLImageElement;
+    const thumbnails = document.querySelectorAll('.thumbnail-btn');
+
+    thumbnails.forEach((thumbnail) => {
+      thumbnail.addEventListener('click', () => {
+        const newImage = thumbnail.getAttribute('data-image');
+        if (newImage && mainImage) {
+          // Animate image change
+          anime({
+            targets: mainImage,
+            opacity: [1, 0],
+            duration: 200,
+            easing: 'easeInQuad',
+            complete: () => {
+              mainImage.src = newImage;
+              anime({
+                targets: mainImage,
+                opacity: [0, 1],
+                duration: 200,
+                easing: 'easeOutQuad',
+              });
+            },
+          });
+
+          // Update active thumbnail
+          thumbnails.forEach(t => t.classList.remove('border-primary-600'));
+          thumbnail.classList.add('border-primary-600');
+        }
+      });
+    });
+
+    // Set first thumbnail as active
+    if (thumbnails.length > 0) {
+      thumbnails[0].classList.add('border-primary-600');
+    }
+
+    // Animate product info on load
+    anime({
+      targets: '#main-image-container',
+      opacity: [0, 1],
+      translateX: [-30, 0],
+      duration: 600,
+      easing: 'easeOutQuad',
+    });
+
+    anime({
+      targets: '.thumbnail-btn',
+      opacity: [0, 1],
+      translateY: [20, 0],
+      delay: anime.stagger(50, { start: 300 }),
+      duration: 400,
+      easing: 'easeOutQuad',
+    });
+  </script>
+
+  <Footer slot="footer" client:load />
+</BaseLayout>

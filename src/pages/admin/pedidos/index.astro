@@ -1,0 +1,152 @@
+---
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { Database } from '../../../lib/db';
+import { formatPrice, formatDate } from '../../../lib/utils';
+
+// Get database
+const db = new Database(Astro.locals.runtime.env.DB);
+
+// Get all orders
+const orders = await db.getOrders();
+
+// Sort by date (newest first)
+const sortedOrders = orders.sort((a, b) =>
+  new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+);
+
+// Get filter from URL
+const url = new URL(Astro.request.url);
+const statusFilter = url.searchParams.get('status');
+
+// Filter orders if needed
+const filteredOrders = statusFilter
+  ? sortedOrders.filter(o => o.status === statusFilter)
+  : sortedOrders;
+
+// Calculate totals
+const totalOrders = orders.length;
+const pendingOrders = orders.filter(o => o.status === 'pending').length;
+const completedOrders = orders.filter(o => o.status === 'completed').length;
+const cancelledOrders = orders.filter(o => o.status === 'cancelled').length;
+---
+
+<AdminLayout title="Pedidos">
+  <div class="space-y-6">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-900 mb-2">Pedidos</h1>
+      <p class="text-gray-600">Gerencie os pedidos dos clientes</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <a
+        href="/admin/pedidos"
+        class={`card ${!statusFilter ? 'ring-2 ring-primary-500' : 'hover:shadow-md'} transition-all`}
+      >
+        <p class="text-sm text-gray-600 mb-1">Total</p>
+        <p class="text-3xl font-bold text-gray-900">{totalOrders}</p>
+      </a>
+      <a
+        href="/admin/pedidos?status=pending"
+        class={`card ${statusFilter === 'pending' ? 'ring-2 ring-yellow-500' : 'hover:shadow-md'} transition-all`}
+      >
+        <p class="text-sm text-gray-600 mb-1">Pendentes</p>
+        <p class="text-3xl font-bold text-yellow-600">{pendingOrders}</p>
+      </a>
+      <a
+        href="/admin/pedidos?status=completed"
+        class={`card ${statusFilter === 'completed' ? 'ring-2 ring-green-500' : 'hover:shadow-md'} transition-all`}
+      >
+        <p class="text-sm text-gray-600 mb-1">Concluídos</p>
+        <p class="text-3xl font-bold text-green-600">{completedOrders}</p>
+      </a>
+      <a
+        href="/admin/pedidos?status=cancelled"
+        class={`card ${statusFilter === 'cancelled' ? 'ring-2 ring-red-500' : 'hover:shadow-md'} transition-all`}
+      >
+        <p class="text-sm text-gray-600 mb-1">Cancelados</p>
+        <p class="text-3xl font-bold text-red-600">{cancelledOrders}</p>
+      </a>
+    </div>
+
+    <!-- Orders Table -->
+    <div class="card">
+      {filteredOrders.length === 0 ? (
+        <div class="text-center py-12">
+          <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+          </svg>
+          <p class="text-gray-600">
+            {statusFilter
+              ? `Nenhum pedido ${statusFilter === 'pending' ? 'pendente' : statusFilter === 'completed' ? 'concluído' : 'cancelado'}`
+              : 'Nenhum pedido registrado'}
+          </p>
+        </div>
+      ) : (
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-gray-200">
+                <th class="text-left py-3 px-4 font-semibold text-gray-700">Número</th>
+                <th class="text-left py-3 px-4 font-semibold text-gray-700">Cliente</th>
+                <th class="text-left py-3 px-4 font-semibold text-gray-700">Contato</th>
+                <th class="text-left py-3 px-4 font-semibold text-gray-700">Total</th>
+                <th class="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
+                <th class="text-left py-3 px-4 font-semibold text-gray-700">Data</th>
+                <th class="text-right py-3 px-4 font-semibold text-gray-700">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredOrders.map((order) => (
+                <tr class="border-b border-gray-100 hover:bg-gray-50">
+                  <td class="py-3 px-4">
+                    <p class="font-mono text-sm font-medium text-gray-900">
+                      {order.order_number}
+                    </p>
+                  </td>
+                  <td class="py-3 px-4">
+                    <p class="font-medium text-gray-900">{order.customer_name}</p>
+                  </td>
+                  <td class="py-3 px-4">
+                    <div class="text-sm">
+                      <p class="text-gray-600">{order.customer_phone}</p>
+                      <p class="text-gray-500 text-xs">{order.customer_email}</p>
+                    </div>
+                  </td>
+                  <td class="py-3 px-4">
+                    <p class="font-bold text-primary-600">
+                      {formatPrice(order.total_amount)}
+                    </p>
+                  </td>
+                  <td class="py-3 px-4">
+                    <span class={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      order.status === 'completed' ? 'bg-green-100 text-green-800' :
+                      order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {order.status === 'completed' ? 'Concluído' :
+                       order.status === 'pending' ? 'Pendente' :
+                       order.status === 'cancelled' ? 'Cancelado' : order.status}
+                    </span>
+                  </td>
+                  <td class="py-3 px-4 text-sm text-gray-600">
+                    {formatDate(order.created_at)}
+                  </td>
+                  <td class="py-3 px-4 text-right">
+                    <a
+                      href={`/admin/pedidos/${order.id}`}
+                      class="text-primary-600 hover:text-primary-700 text-sm font-medium"
+                    >
+                      Ver detalhes
+                    </a>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  </div>
+</AdminLayout>
